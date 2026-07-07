@@ -68,6 +68,13 @@ async def pipeline_worker(category: str, query: str, limit: int, voice: str):
         cat_dir = f"papers/{category}"
         os.makedirs(cat_dir, exist_ok=True)
         
+        # Check source papers availability
+        pdf_count = len([f for f in os.listdir(cat_dir) if f.endswith(".pdf")])
+        if pdf_count == 0 and not query:
+            log_line("\nERROR: No PDF files found in category folder and no search query was provided.")
+            log_line("Please drag and drop your PDFs first, or write a query/theme in the 'Búsqueda Automatizada en arXiv' field.")
+            raise Exception("No PDF source files found and no arXiv search query specified.")
+            
         # 1. Download papers dynamically if a query is provided
         if query:
             log_line(f"\n--- STEP 1: DOWNLOADING PAPERS FOR '{category}' ---")
@@ -226,4 +233,4 @@ if __name__ == "__main__":
     asyncio.set_event_loop(loop)
     loop.call_later(1.5, open_browser)
     
-    uvicorn.run("web_app.py:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run("web_app:app", host="127.0.0.1", port=8000, reload=False)

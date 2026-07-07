@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import csv
 import json
@@ -212,7 +213,7 @@ def main():
     csv_path = os.path.join(PARETOS_ROOT, args.category, "ranked_words.csv")
     if not os.path.exists(csv_path):
         print(f"Error: No ranked words CSV found at {csv_path}. Run rank_words.py first.")
-        return
+        sys.exit(1)
         
     ranked_words = []
     with open(csv_path, "r", encoding="utf-8") as f:
@@ -222,7 +223,7 @@ def main():
             
     if not ranked_words:
         print(f"No words found in ranked list for category {args.category}.")
-        return
+        sys.exit(1)
         
     print(f"Starting curation of {args.limit} cards for category '{args.category}' using qwen2.5:14b...")
     

@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import argparse
 import genanki
@@ -37,7 +38,7 @@ def main():
     
     if not os.path.exists(data_json_path):
         print(f"Error: No card data found at {data_json_path}. Run generate_anki_data.py first.")
-        return
+        sys.exit(1)
         
     with open(data_json_path, "r", encoding="utf-8") as f:
         deck_data = json.load(f)
