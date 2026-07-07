@@ -15,46 +15,22 @@ app = FastAPI(title="GRAFT Local")
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Supported languages and their neural voices mapping (SOTA Microsoft Edge-TTS)
-LANGUAGES = {
-    "english": {
-        "name": "English",
-        "default_voice": "en-US-EmmaNeural",
-        "voices": [
-            {"id": "en-US-EmmaNeural", "name": "Emma (US Female - Default)"},
-            {"id": "en-US-BrianNeural", "name": "Brian (US Male)"},
-            {"id": "en-US-AvaNeural", "name": "Ava (US Female)"},
-            {"id": "en-GB-SoniaNeural", "name": "Sonia (UK Female)"},
-            {"id": "en-GB-RyanNeural", "name": "Ryan (UK Male)"}
-        ]
-    },
-    "spanish": {
-        "name": "Español",
-        "default_voice": "es-CL-LorenzoNeural",
-        "voices": [
-            {"id": "es-CL-LorenzoNeural", "name": "Lorenzo (Chile Male - Default)"},
-            {"id": "es-ES-ElviraNeural", "name": "Elvira (Spain Female)"},
-            {"id": "es-MX-DaliaNeural", "name": "Dalia (Mexico Female)"},
-            {"id": "es-ES-AlvaroNeural", "name": "Alvaro (Spain Male)"}
-        ]
-    },
-    "french": {
-        "name": "Français",
-        "default_voice": "fr-FR-DeniseNeural",
-        "voices": [
-            {"id": "fr-FR-DeniseNeural", "name": "Denise (France Female)"},
-            {"id": "fr-FR-HenriNeural", "name": "Henri (France Male)"}
-        ]
-    },
-    "german": {
-        "name": "Deutsch",
-        "default_voice": "de-DE-KatjaNeural",
-        "voices": [
-            {"id": "de-DE-KatjaNeural", "name": "Katja (Germany Female)"},
-            {"id": "de-DE-ConradNeural", "name": "Conrad (Germany Male)"}
-        ]
-    }
-}
+# Supported English voices (Microsoft Edge-TTS) for reading the vocabulary and example sentences
+VOICES = [
+    {"id": "en-US-EmmaNeural", "name": "Emma (US Female - Default)"},
+    {"id": "en-US-BrianNeural", "name": "Brian (US Male)"},
+    {"id": "en-US-AvaNeural", "name": "Ava (US Female)"},
+    {"id": "en-GB-SoniaNeural", "name": "Sonia (UK Female)"},
+    {"id": "en-GB-RyanNeural", "name": "Ryan (UK Male)"}
+]
+
+# Supported native languages for translations/definitions
+NATIVE_LANGUAGES = [
+    {"id": "english", "name": "English"},
+    {"id": "spanish", "name": "Español"},
+    {"id": "french", "name": "Français"},
+    {"id": "german", "name": "Deutsch"}
+]
 
 # Global task state
 task_state = {
@@ -93,6 +69,31 @@ async def run_cmd_async(cmd):
         raise Exception(f"Command failed: {cmd}")
     log_line("Command finished successfully.")
 
+import requests
+async def translate_query_to_english(query: str):
+    log_line(f"Translating search query to English keywords: '{query}'...")
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "model": "qwen2.5:14b",
+        "messages": [
+            {"role": "user", "content": f"Translate this academic/technical search query into a simple English keyword query for arXiv. Output ONLY the translated query, no explanations or quotes.\nQuery: {query}"}
+        ],
+        "stream": False,
+        "options": {
+            "temperature": 0.0
+        }
+    }
+    try:
+        response = requests.post("http://localhost:11434/api/chat", headers=headers, json=payload, timeout=12)
+        response.raise_for_status()
+        translated = response.json()['message']['content'].strip()
+        translated = translated.replace('"', '').replace("'", "")
+        log_line(f"Translated query: '{translated}'")
+        return translated
+    except Exception as e:
+        log_line(f"Failed to translate query: {e}. Using raw query.")
+        return query
+
 async def pipeline_worker(category: str, query: str, limit: int, voice: str, language: str):
     global task_state
     try:
@@ -109,13 +110,16 @@ async def pipeline_worker(category: str, query: str, limit: int, voice: str, lan
             
         # 1. Download papers dynamically if a query is provided
         if query:
+            # Translate query to English dynamically using local LLM to fetch English papers
+            english_query = await translate_query_to_english(query)
+            
             log_line(f"\n--- STEP 1: DOWNLOADING PAPERS FOR '{category}' ---")
             # Check existing paper count. If count is < 8, download deficit
             pdf_count = len([f for f in os.listdir(cat_dir) if f.endswith(".pdf")])
             if pdf_count < 8:
                 deficit = 8 - pdf_count
-                log_line(f"Current paper count is {pdf_count}. Downloading {deficit} papers to ensure vocabulary richness...")
-                cmd = ["./venv/bin/python", "scripts/download_papers.py", "--query", query, "--category", category, "--limit", str(deficit)]
+                log_line(f"Current paper count is {pdf_count}. Downloading {deficit} papers using English keywords '{english_query}'...")
+                cmd = ["./venv/bin/python", "scripts/download_papers.py", "--query", english_query, "--category", category, "--limit", str(deficit)]
                 await run_cmd_async(cmd)
             else:
                 log_line(f"Vocabulary richness check: Category has {pdf_count} papers (>= 8). Skipping download.")
@@ -157,7 +161,11 @@ def get_home():
 
 @app.get("/api/languages")
 def get_languages():
-    return LANGUAGES
+    return NATIVE_LANGUAGES
+
+@app.get("/api/voices")
+def get_voices():
+    return VOICES
 
 @app.get("/api/status")
 def get_status():

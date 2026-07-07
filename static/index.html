@@ -114,36 +114,26 @@
         let selectedFiles = [];
 
         // 1. Fetch available languages and voices on load
-        let languageData = {};
-        async function loadLanguages() {
+        async function initFormOptions() {
             try {
-                const res = await fetch('/api/languages');
-                languageData = await res.json();
-                
-                // Populate languages select
-                languageSelect.innerHTML = Object.keys(languageData).map(langKey => 
-                    `<option value="${langKey}">${languageData[langKey].name}</option>`
+                // Populate languages
+                const langRes = await fetch('/api/languages');
+                const languages = await langRes.json();
+                languageSelect.innerHTML = languages.map(lang => 
+                    `<option value="${lang.id}">${lang.name}</option>`
                 ).join('');
                 
-                // Initial voice population
-                updateVoices();
+                // Populate English voices (target vocabulary reader)
+                const voiceRes = await fetch('/api/voices');
+                const voices = await voiceRes.json();
+                voiceSelect.innerHTML = voices.map(v => 
+                    `<option value="${v.id}">${v.name}</option>`
+                ).join('');
             } catch (err) {
                 printLog(`[SYSTEM ERROR]: No se pudieron cargar los idiomas y voces neuronales: ${err}`);
             }
         }
-
-        function updateVoices() {
-            const selectedLang = languageSelect.value;
-            if (languageData[selectedLang]) {
-                const voices = languageData[selectedLang].voices;
-                voiceSelect.innerHTML = voices.map(v => 
-                    `<option value="${v.id}">${v.name}</option>`
-                ).join('');
-            }
-        }
-
-        languageSelect.addEventListener('change', updateVoices);
-        loadLanguages();
+        initFormOptions();
 
         // 2. Logging helper
         function printLog(msg, color = null) {

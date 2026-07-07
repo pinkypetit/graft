@@ -19,6 +19,17 @@ CURATED_CACHE_PATH = "/Users/petit/Desktop/anki personalizado/cache/curated_cach
 # Default TTS Voice (Microsoft Neural SOTA Voice)
 DEFAULT_VOICE = "en-US-EmmaNeural"
 
+# Mapping of native languages to their default neural voices for translated definitions
+NATIVE_VOICES = {
+    "english": "en-US-EmmaNeural",
+    "spanish": "es-CL-LorenzoNeural",
+    "french": "fr-FR-DeniseNeural",
+    "german": "de-DE-KatjaNeural"
+}
+
+def get_native_voice(language):
+    return NATIVE_VOICES.get(language.lower(), "en-US-EmmaNeural")
+
 def load_json_cache(path):
     if os.path.exists(path):
         try:
@@ -121,28 +132,28 @@ def find_all_context_sentences(word, category, max_sentences=5):
     return candidates
 
 def curate_with_ollama(word, category, raw_sentences, raw_defs, language):
-    prompt = f"""You are an expert lexicographer curating a technical vocabulary deck for a professional and academic audience in the target language: {language}.
+    prompt = f"""You are an expert lexicographer curating an English vocabulary deck for a native speaker of {language}.
+The target technical English word is: '{word}'
 The current category/theme is: {category}
-Word: {word}
 
-Here are some raw context sentences containing '{word}' found in research papers:
+Here are some raw English context sentences containing '{word}' found in research papers:
 {json.dumps(raw_sentences, indent=2)}
 
-Here are standard dictionary definitions for '{word}' (if available):
+Here are standard English dictionary definitions for '{word}' (if available):
 {json.dumps(raw_defs, indent=2)}
 
 Your task:
-1. Analyze if this word is a proper name/noun, an acronym/abbreviation, a website/noise, or not a valid vocabulary word in {language}. If so, you MUST set "skip": true.
-2. If it is a valid word, select or write the definition in {language} that matches how the word is used in the context sentences. The definition must be written in {language}.
-3. Clean and select the best context sentence in {language} from the papers. You MUST remove citations (e.g., [1], (Author, 2018)), initials, parentheticals, and fix formatting errors. The sentence must be in {language}, natural, grammatically correct, and help understand the word's meaning.
-4. Provide the correct IPA transcription for the word. If IPA is not applicable for {language}, write the standard phonetic pronunciation or leave empty.
+1. Analyze if this word is a proper name/noun, an acronym/abbreviation, a website/noise, or not a valid English vocabulary word. If so, you MUST set "skip": true.
+2. If it is a valid word, select or write a clear, accurate, and concise definition/translation in {language} that matches how the word is used in the context sentences. The definition MUST be written in {language}.
+3. Clean and select the best English context sentence from the papers. You MUST remove citations (e.g., [1], (Author, 2018)), initials, parentheticals, and fix PDF conversion errors. The sentence must be in English, natural, grammatically correct, and help understand the word's meaning.
+4. Provide the correct IPA transcription for the English word (e.g. /klaɪmət/ or /prɪˌsɪpɪˈteɪʃən/).
 
 Output the result strictly as a JSON object with this exact schema:
 {{
   "skip": boolean,
   "ipa": "string (enclosed in forward slashes or brackets)",
-  "definition": "string (concise definition in {language})",
-  "example": "string (the clean context sentence. Do not bold the word, the script will do it)"
+  "definition": "string (concise definition/translation in {language})",
+  "example": "string (the clean English context sentence. Do not bold the word, the script will do it)"
 }}"""
 
     headers = {"Content-Type": "application/json"}
@@ -256,18 +267,16 @@ def main():
             print(f"  Loaded curated content from cache.")
         else:
             # 2. Gather dictionary base info
-            # Only query English dictionary API if target language is English
-            if args.language == "english":
-                dict_info = fetch_dictionary_info(word, dict_cache)
-                raw_defs = dict_info['definitions']
-                
-                # Programmatic safety check: if the word doesn't exist in the English dictionary (404), skip it immediately.
-                if not raw_defs:
-                    print(f"  Word skipped: not found in English dictionary (likely a non-English word or typo).")
-                    curated_cache[cache_key] = {"skip": True}
-                    continue
-            else:
-                raw_defs = []
+            # The vocabulary target is always English, so we always query the English dictionary
+            dict_info = fetch_dictionary_info(word, dict_cache)
+            raw_defs = dict_info['definitions']
+            
+            # Programmatic safety check: if the word doesn't exist in the English dictionary (404), skip it immediately.
+            # This completely blocks non-English words or typos from being curated.
+            if not raw_defs:
+                print(f"  Word skipped: not found in English dictionary (likely a non-English word or typo).")
+                curated_cache[cache_key] = {"skip": True}
+                continue
             
             # 3. Gather context sentences
             raw_sentences = find_all_context_sentences(word, args.category)
@@ -309,7 +318,7 @@ def main():
         
         # Generate neural TTS files
         generate_tts_audio(word, word_audio_path, args.voice)
-        generate_tts_audio(definition, meaning_audio_path, args.voice)
+        generate_tts_audio(definition, meaning_audio_path, get_native_voice(args.language))
         generate_tts_audio(example_highlighted, example_audio_path, args.voice)
         
         deck_data.append({
