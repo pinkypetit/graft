@@ -191,11 +191,16 @@ async def upload_files(
 
 @app.get("/api/download/{category}")
 def download_deck(category: str):
+    # Normalize category name (lowercase, strip, replace spaces/dashes with underscores)
+    clean_cat = re.sub(r'[^a-zA-Z0-9_]', '', category.strip().lower().replace(" ", "_").replace("-", "_"))
+    
     # Search for apkg in workspace
-    # Format: Technical_English_<Category_Title>.apkg or similar
     for f in os.listdir("."):
-        if f.endswith(".apkg") and category.lower() in f.lower():
-            return FileResponse(f, media_type="application/octet-stream", filename=f)
+        if f.endswith(".apkg"):
+            # Normalize filename for comparison
+            f_norm = re.sub(r'[^a-zA-Z0-9_]', '', f.lower().replace(" ", "_").replace("-", "_"))
+            if clean_cat in f_norm:
+                return FileResponse(f, media_type="application/octet-stream", filename=f)
             
     raise HTTPException(status_code=404, detail=f"No compiled Anki deck found for category '{category}'.")
 

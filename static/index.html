@@ -234,8 +234,11 @@
                     throw new Error(errData.detail || "Error al iniciar.");
                 }
 
+                const data = await res.json();
+                const cleanCategory = data.category;
+
                 // Connect to real-time logs via SSE
-                connectLogStream(category);
+                connectLogStream(cleanCategory);
 
             } catch (err) {
                 printLog(`[SYSTEM ERROR]: ${err.message}`, '#ff5f56');
