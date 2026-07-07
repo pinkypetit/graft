@@ -55,7 +55,10 @@ STOP_WORDS = set([
     'mas', 'suyo', 'suya', 'sus', 'sus', 'una', 'uno', 'unas', 'unos', 'ella', 'ellos', 'ellas', 'nosotros',
     'nosotras', 'usted', 'ustedes', 'bajo', 'donde', 'cuando', 'quien', 'quienes', 'cual', 'cuales', 'cuyo',
     'cuya', 'cuyos', 'cuyas', 'cambio', 'climatico', 'chile', 'calor', 'demanda', 'electrica', 'olas', 'efectos',
-    'contexto', 'estudio', 'analisis', 'datos', 'modelo', 'metodo', 'metodos', 'resultados', 'figura', 'tabla'
+    'contexto', 'estudio', 'analisis', 'datos', 'modelo', 'metodo', 'metodos', 'resultados', 'figura', 'tabla',
+    
+    # French & German stop words
+    'une', 'pour', 'dans', 'sur', 'avec', 'les', 'des', 'und', 'ein', 'eine', 'mit', 'von', 'fuer', 'den', 'der', 'die', 'das'
 ])
 
 def clean_and_tokenize(text):

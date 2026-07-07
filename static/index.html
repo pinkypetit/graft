@@ -33,7 +33,14 @@
                     <input type="text" id="query" name="query" placeholder="ej. deep learning transformer, wine fermentation yeasts (Se descargará un lote si tienes menos de 8 papers)">
                 </div>
 
-                <div class="input-group full-width">
+                <div class="input-group">
+                    <label for="language">Idioma Objetivo del Mazo</label>
+                    <select id="language" name="language">
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+
+                <div class="input-group">
                     <label for="voice">Voz Neural de Lectura (SOTA Neural TTS)</label>
                     <select id="voice" name="voice">
                         <!-- Loaded dynamically -->
@@ -101,23 +108,42 @@
         const fileList = document.getElementById('fileList');
         const downloadSection = document.getElementById('downloadSection');
         const downloadBtn = document.getElementById('downloadBtn');
+        const languageSelect = document.getElementById('language');
 
         let logEventSource = null;
         let selectedFiles = [];
 
-        // 1. Fetch available voices on load
-        async function loadVoices() {
+        // 1. Fetch available languages and voices on load
+        let languageData = {};
+        async function loadLanguages() {
             try {
-                const res = await fetch('/api/voices');
-                const voices = await res.json();
+                const res = await fetch('/api/languages');
+                languageData = await res.json();
+                
+                // Populate languages select
+                languageSelect.innerHTML = Object.keys(languageData).map(langKey => 
+                    `<option value="${langKey}">${languageData[langKey].name}</option>`
+                ).join('');
+                
+                // Initial voice population
+                updateVoices();
+            } catch (err) {
+                printLog(`[SYSTEM ERROR]: No se pudieron cargar los idiomas y voces neuronales: ${err}`);
+            }
+        }
+
+        function updateVoices() {
+            const selectedLang = languageSelect.value;
+            if (languageData[selectedLang]) {
+                const voices = languageData[selectedLang].voices;
                 voiceSelect.innerHTML = voices.map(v => 
                     `<option value="${v.id}">${v.name}</option>`
                 ).join('');
-            } catch (err) {
-                printLog(`[SYSTEM ERROR]: No se pudieron cargar las voces neuronales.`);
             }
         }
-        loadVoices();
+
+        languageSelect.addEventListener('change', updateVoices);
+        loadLanguages();
 
         // 2. Logging helper
         function printLog(msg, color = null) {
@@ -207,6 +233,7 @@
             const limit = limitInput.value;
             const query = queryInput.value.trim();
             const voice = voiceSelect.value;
+            const language = languageSelect.value;
 
             if (!category) return;
 
@@ -222,6 +249,7 @@
             formData.append('limit', limit);
             formData.append('query', query);
             formData.append('voice', voice);
+            formData.append('language', language);
 
             try {
                 const res = await fetch('/api/generate', {

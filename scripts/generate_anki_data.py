@@ -120,28 +120,28 @@ def find_all_context_sentences(word, category, max_sentences=5):
             
     return candidates
 
-def curate_with_ollama(word, category, raw_sentences, raw_defs):
-    prompt = f"""You are an expert lexicographer curating an English vocabulary deck for a professional and academic audience.
+def curate_with_ollama(word, category, raw_sentences, raw_defs, language):
+    prompt = f"""You are an expert lexicographer curating a technical vocabulary deck for a professional and academic audience in the target language: {language}.
 The current category/theme is: {category}
 Word: {word}
 
 Here are some raw context sentences containing '{word}' found in research papers:
 {json.dumps(raw_sentences, indent=2)}
 
-Here are standard dictionary definitions for '{word}':
+Here are standard dictionary definitions for '{word}' (if available):
 {json.dumps(raw_defs, indent=2)}
 
 Your task:
-1. Analyze if this word is a Spanish word (like 'las', 'los', 'para', 'calor', 'demanda', 'ola'), a proper name/noun (e.g. 'Zhang', 'Chile', 'Poland', 'Thompson'), an acronym/abbreviation (e.g. 'GCM', 'BESS', 'HVDC', 'RCP'), a website/noise (e.g. 'www', 'http', 'doi', 'https'), or not a valid English vocabulary word. If so, you MUST set "skip": true.
-2. If it is a valid word, select the dictionary definition that matches how the word is used in the context sentences. If none match or they don't fit the category theme, write a clear, accurate, and concise definition in English.
-3. Clean and select the best context sentence from the papers. You MUST remove citations (e.g., [1], [2-4], (Author et al., 2018)), initials, parentheticals, and fix PDF conversion errors (like words stuck together). The sentence must be natural, grammatically correct, and help understand the word's meaning. If the paper sentences are too broken or none exist, write a new clear example sentence where the word's meaning can be inferred from the context.
-4. Provide the correct IPA transcription (e.g. /klaɪmət/ or /prɪˌsɪpɪˈteɪʃən/).
+1. Analyze if this word is a proper name/noun, an acronym/abbreviation, a website/noise, or not a valid vocabulary word in {language}. If so, you MUST set "skip": true.
+2. If it is a valid word, select or write the definition in {language} that matches how the word is used in the context sentences. The definition must be written in {language}.
+3. Clean and select the best context sentence in {language} from the papers. You MUST remove citations (e.g., [1], (Author, 2018)), initials, parentheticals, and fix formatting errors. The sentence must be in {language}, natural, grammatically correct, and help understand the word's meaning.
+4. Provide the correct IPA transcription for the word. If IPA is not applicable for {language}, write the standard phonetic pronunciation or leave empty.
 
 Output the result strictly as a JSON object with this exact schema:
 {{
   "skip": boolean,
   "ipa": "string (enclosed in forward slashes or brackets)",
-  "definition": "string (concise definition)",
+  "definition": "string (concise definition in {language})",
   "example": "string (the clean context sentence. Do not bold the word, the script will do it)"
 }}"""
 
@@ -202,6 +202,7 @@ def main():
     parser.add_argument("--category", type=str, required=True, help="Category name (e.g. 'vinos', 'energia')")
     parser.add_argument("--limit", type=int, default=30, help="Number of target cards to curate (default: 30)")
     parser.add_argument("--voice", type=str, default=DEFAULT_VOICE, help=f"edge-tts voice (default: {DEFAULT_VOICE})")
+    parser.add_argument("--language", type=str, default="english", help="Target language for vocabulary (default: 'english')")
     
     args = parser.parse_args()
     
@@ -255,21 +256,24 @@ def main():
             print(f"  Loaded curated content from cache.")
         else:
             # 2. Gather dictionary base info
-            dict_info = fetch_dictionary_info(word, dict_cache)
-            raw_defs = dict_info['definitions']
-            
-            # Programmatic safety check: if the word doesn't exist in the English dictionary (404), skip it immediately.
-            # This completely blocks Spanish words like "olas", "demanda", "calor" from calling Ollama or being accepted.
-            if not raw_defs:
-                print(f"  Word skipped: not found in English dictionary (likely a non-English word or typo).")
-                curated_cache[cache_key] = {"skip": True}
-                continue
+            # Only query English dictionary API if target language is English
+            if args.language == "english":
+                dict_info = fetch_dictionary_info(word, dict_cache)
+                raw_defs = dict_info['definitions']
+                
+                # Programmatic safety check: if the word doesn't exist in the English dictionary (404), skip it immediately.
+                if not raw_defs:
+                    print(f"  Word skipped: not found in English dictionary (likely a non-English word or typo).")
+                    curated_cache[cache_key] = {"skip": True}
+                    continue
+            else:
+                raw_defs = []
             
             # 3. Gather context sentences
             raw_sentences = find_all_context_sentences(word, args.category)
             
             # 4. Curate using local Ollama model
-            info = curate_with_ollama(word, args.category, raw_sentences, raw_defs)
+            info = curate_with_ollama(word, args.category, raw_sentences, raw_defs, args.language)
             
             # Save to curated cache
             curated_cache[cache_key] = info

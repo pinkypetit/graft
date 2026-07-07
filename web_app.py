@@ -15,14 +15,46 @@ app = FastAPI(title="GRAFT Local")
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Supported voices (Microsoft Edge-TTS)
-VOICES = [
-    {"id": "en-US-EmmaNeural", "name": "Emma (US Female - Default)"},
-    {"id": "en-US-BrianNeural", "name": "Brian (US Male)"},
-    {"id": "en-US-AvaNeural", "name": "Ava (US Female)"},
-    {"id": "en-GB-SoniaNeural", "name": "Sonia (UK Female)"},
-    {"id": "en-GB-RyanNeural", "name": "Ryan (UK Male)"}
-]
+# Supported languages and their neural voices mapping (SOTA Microsoft Edge-TTS)
+LANGUAGES = {
+    "english": {
+        "name": "English",
+        "default_voice": "en-US-EmmaNeural",
+        "voices": [
+            {"id": "en-US-EmmaNeural", "name": "Emma (US Female - Default)"},
+            {"id": "en-US-BrianNeural", "name": "Brian (US Male)"},
+            {"id": "en-US-AvaNeural", "name": "Ava (US Female)"},
+            {"id": "en-GB-SoniaNeural", "name": "Sonia (UK Female)"},
+            {"id": "en-GB-RyanNeural", "name": "Ryan (UK Male)"}
+        ]
+    },
+    "spanish": {
+        "name": "Español",
+        "default_voice": "es-CL-LorenzoNeural",
+        "voices": [
+            {"id": "es-CL-LorenzoNeural", "name": "Lorenzo (Chile Male - Default)"},
+            {"id": "es-ES-ElviraNeural", "name": "Elvira (Spain Female)"},
+            {"id": "es-MX-DaliaNeural", "name": "Dalia (Mexico Female)"},
+            {"id": "es-ES-AlvaroNeural", "name": "Alvaro (Spain Male)"}
+        ]
+    },
+    "french": {
+        "name": "Français",
+        "default_voice": "fr-FR-DeniseNeural",
+        "voices": [
+            {"id": "fr-FR-DeniseNeural", "name": "Denise (France Female)"},
+            {"id": "fr-FR-HenriNeural", "name": "Henri (France Male)"}
+        ]
+    },
+    "german": {
+        "name": "Deutsch",
+        "default_voice": "de-DE-KatjaNeural",
+        "voices": [
+            {"id": "de-DE-KatjaNeural", "name": "Katja (Germany Female)"},
+            {"id": "de-DE-ConradNeural", "name": "Conrad (Germany Male)"}
+        ]
+    }
+}
 
 # Global task state
 task_state = {
@@ -61,7 +93,7 @@ async def run_cmd_async(cmd):
         raise Exception(f"Command failed: {cmd}")
     log_line("Command finished successfully.")
 
-async def pipeline_worker(category: str, query: str, limit: int, voice: str):
+async def pipeline_worker(category: str, query: str, limit: int, voice: str, language: str):
     global task_state
     try:
         # Category directory
@@ -100,7 +132,7 @@ async def pipeline_worker(category: str, query: str, limit: int, voice: str):
         
         # 4. Generate curated data and TTS audios
         log_line(f"\n--- STEP 4: CURATING VOCABULARY VIA LOCAL LLM & SOTA TTS ---")
-        cmd = ["./venv/bin/python", "scripts/generate_anki_data.py", "--category", category, "--limit", str(limit), "--voice", voice]
+        cmd = ["./venv/bin/python", "scripts/generate_anki_data.py", "--category", category, "--limit", str(limit), "--voice", voice, "--language", language]
         await run_cmd_async(cmd)
         
         # 5. Compile Anki Deck
@@ -123,9 +155,9 @@ def get_home():
             return HTMLResponse(f.read())
     return HTMLResponse("<h1>Welcome to AnkiBrain Local</h1><p>Static index.html not found. Place it in the 'static/' directory.</p>")
 
-@app.get("/api/voices")
-def get_voices():
-    return VOICES
+@app.get("/api/languages")
+def get_languages():
+    return LANGUAGES
 
 @app.get("/api/status")
 def get_status():
@@ -140,7 +172,8 @@ def start_generation(
     category: str = Form(...),
     query: str = Form(""),
     limit: int = Form(30),
-    voice: str = Form("en-US-EmmaNeural")
+    voice: str = Form(...),
+    language: str = Form("english")
 ):
     global task_state
     if task_state["status"] == "running":
@@ -160,10 +193,10 @@ def start_generation(
     while not log_queue.empty():
         log_queue.get_nowait()
         
-    log_line(f"Starting pipeline for category: '{clean_cat}' (Voice: {voice}, Limit: {limit})")
+    log_line(f"Starting pipeline for category: '{clean_cat}' (Language: {language}, Voice: {voice}, Limit: {limit})")
     
     # Start worker in background
-    background_tasks.add_task(pipeline_worker, clean_cat, query, limit, voice)
+    background_tasks.add_task(pipeline_worker, clean_cat, query, limit, voice, language)
     
     return {"message": "Pipeline started successfully", "category": clean_cat}
 

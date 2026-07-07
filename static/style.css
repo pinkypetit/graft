@@ -4,12 +4,12 @@
     --bg-color: #0b0c10;
     --card-bg: rgba(22, 26, 35, 0.65);
     --border-color: rgba(255, 255, 255, 0.08);
-    --accent-magenta: #FF80DD;
-    --accent-cyan: #00E5FF;
+    --accent-magenta: #8B5CF6;
+    --accent-cyan: #00FF87;
     --text-primary: #f5f6fa;
     --text-secondary: #a0a8c0;
     --terminal-bg: #090a0f;
-    --btn-hover-glow: 0 0 15px rgba(0, 229, 255, 0.4);
+    --btn-hover-glow: 0 0 15px rgba(0, 255, 135, 0.4);
 }
 
 * {
