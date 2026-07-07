@@ -1,0 +1,19 @@
+# Python environment and cache files
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Caching and building directories
+build/
+cache/
+refrencia/
+
+# Local documents (to prevent massive repo sizes and copyright issues)
+papers/
+
+# Ignore compiled decks in the root directory
+/*.apkg
+
+# Whitelist the demo deck in docs/ for GitHub Pages
+!docs/Technical_English_Vinos.apkg

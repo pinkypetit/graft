@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRAFT - Generative Resource for Academic and Fluency Techniques</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Branding Header -->
+        <header>
+            <h1>GRAFT</h1>
+            <p class="subtitle">Generative Resource for Academic and <span>Fluency Techniques</span></p>
+        </header>
+
+        <!-- Main Form Panel -->
+        <div class="card">
+            <form id="graftForm" class="form-grid">
+                <div class="input-group">
+                    <label for="category">Categoría / Tema del Mazo</label>
+                    <input type="text" id="category" name="category" placeholder="ej. vinos, inteligencia_artificial, finanzas" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="limit">Número de Palabras a Curar</label>
+                    <input type="number" id="limit" name="limit" min="5" max="100" value="30" required>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="query">Búsqueda Automatizada en arXiv (Opcional)</label>
+                    <input type="text" id="query" name="query" placeholder="ej. deep learning transformer, wine fermentation yeasts (Se descargará un lote si tienes menos de 8 papers)">
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="voice">Voz Neural de Lectura (SOTA Neural TTS)</label>
+                    <select id="voice" name="voice">
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+
+                <!-- Drag & Drop Zone -->
+                <div class="input-group full-width">
+                    <label>Subir tus propios Papers PDF (Opcional)</label>
+                    <div id="dropzone" class="dropzone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p id="dropzoneText">Arrastra y suelta tus archivos PDF aquí, o haz clic para buscarlos.</p>
+                        <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+                        <div id="fileList" class="file-list" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="full-width">
+                    <button type="submit" id="submitBtn" class="btn-primary">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Generar Mazo Personalizado
+                    </button>
+                </div>
+            </form>
+
+            <!-- Download Panel -->
+            <div id="downloadSection" class="download-section">
+                <div class="download-title"><i class="fa-solid fa-circle-check"></i> ¡Mazo Compilado con Éxito!</div>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Descarga tu archivo .apkg e impórtalo directamente en Anki en tu celular o computadora.
+                </p>
+                <a id="downloadBtn" href="#" class="btn-download">
+                    <i class="fa-solid fa-file-arrow-down"></i> Descargar Mazo (.apkg)
+                </a>
+            </div>
+        </div>
+
+        <!-- Real-time Terminal Log Output -->
+        <div class="card terminal-card">
+            <div class="terminal-header">
+                <div class="terminal-title"><i class="fa-solid fa-terminal"></i> Terminal de Ejecución</div>
+                <div class="dot-group">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+            </div>
+            <div id="terminal" class="terminal-body">
+                <div>[SYSTEM]: Esperando configuración para iniciar la curación...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Logic -->
+    <script>
+        const form = document.getElementById('graftForm');
+        const categoryInput = document.getElementById('category');
+        const limitInput = document.getElementById('limit');
+        const queryInput = document.getElementById('query');
+        const voiceSelect = document.getElementById('voice');
+        const submitBtn = document.getElementById('submitBtn');
+        const terminal = document.getElementById('terminal');
+        const dropzone = document.getElementById('dropzone');
+        const dropzoneText = document.getElementById('dropzoneText');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let logEventSource = null;
+        let selectedFiles = [];
+
+        // 1. Fetch available voices on load
+        async function loadVoices() {
+            try {
+                const res = await fetch('/api/voices');
+                const voices = await res.json();
+                voiceSelect.innerHTML = voices.map(v => 
+                    `<option value="${v.id}">${v.name}</option>`
+                ).join('');
+            } catch (err) {
+                printLog(`[SYSTEM ERROR]: No se pudieron cargar las voces neuronales.`);
+            }
+        }
+        loadVoices();
+
+        // 2. Logging helper
+        function printLog(msg, color = null) {
+            const line = document.createElement('div');
+            line.textContent = msg;
+            if (color) {
+                line.style.color = color;
+            }
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // 3. Drag & Drop File Upload Handling
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            handleFileSelection(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelection(e.target.files);
+        });
+
+        function handleFileSelection(files) {
+            const category = categoryInput.value.trim();
+            if (!category) {
+                alert("Por favor, ingresa el nombre de la categoría primero para saber dónde guardar los PDFs.");
+                return;
+            }
+
+            const pdfs = Array.from(files).filter(f => f.name.endsWith('.pdf'));
+            if (pdfs.length === 0) {
+                alert("Solo se admiten archivos en formato PDF.");
+                return;
+            }
+
+            selectedFiles = pdfs;
+            fileList.style.display = 'block';
+            fileList.innerHTML = pdfs.map(f => `
+                <div class="file-item">
+                    <span><i class="fa-solid fa-file-pdf"></i> ${f.name}</span>
+                    <span>(${(f.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                </div>
+            `).join('');
+
+            // Upload files immediately
+            uploadFiles(category, pdfs);
+        }
+
+        async function uploadFiles(category, files) {
+            printLog(`[SYSTEM]: Subiendo ${files.length} archivos PDF al servidor local...`);
+            const formData = new FormData();
+            formData.append('category', category);
+            files.forEach(f => {
+                formData.append('files', f);
+            });
+
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                printLog(`[SYSTEM SUCCESS]: ${data.message}`, '#00E5FF');
+                dropzoneText.textContent = `¡${files.length} archivos subidos correctamente!`;
+            } catch (err) {
+                printLog(`[SYSTEM ERROR]: Error al subir archivos: ${err}`, '#ff5f56');
+            }
+        }
+
+        // 4. Form Submission and Log Streaming (SSE)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const category = categoryInput.value.trim();
+            const limit = limitInput.value;
+            const query = queryInput.value.trim();
+            const voice = voiceSelect.value;
+
+            if (!category) return;
+
+            // Reset UI
+            downloadSection.style.display = 'none';
+            submitBtn.disabled = true;
+            terminal.innerHTML = '';
+            printLog(`[SYSTEM]: Inicializando pipeline de curación GRAFT...`);
+
+            // Start generation via REST POST
+            const formData = new FormData();
+            formData.append('category', category);
+            formData.append('limit', limit);
+            formData.append('query', query);
+            formData.append('voice', voice);
+
+            try {
+                const res = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.detail || "Error al iniciar.");
+                }
+
+                // Connect to real-time logs via SSE
+                connectLogStream(category);
+
+            } catch (err) {
+                printLog(`[SYSTEM ERROR]: ${err.message}`, '#ff5f56');
+                submitBtn.disabled = false;
+            }
+        });
+
+        function connectLogStream(category) {
+            if (logEventSource) {
+                logEventSource.close();
+            }
+
+            logEventSource = new EventSource('/api/logs');
+
+            logEventSource.onmessage = (event) => {
+                const line = event.data;
+                
+                // Color mappings for terminal clarity
+                if (line.includes("SUCCESS:")) {
+                    printLog(line, '#00FF87');
+                    // Show download section
+                    downloadBtn.href = `/api/download/${category}`;
+                    downloadSection.style.display = 'block';
+                    logEventSource.close();
+                    submitBtn.disabled = false;
+                } else if (line.includes("ERROR in pipeline")) {
+                    printLog(line, '#ff5f56');
+                    logEventSource.close();
+                    submitBtn.disabled = false;
+                } else if (line.includes("--- STEP")) {
+                    printLog(line, '#FF80DD');
+                } else if (line.includes("Executing command:")) {
+                    printLog(line, '#a0a8c0');
+                } else {
+                    printLog(line);
+                }
+            };
+
+            logEventSource.onerror = (err) => {
+                // Connection might close naturally when worker finishes
+                console.log("Log stream connection closed or error occurred:", err);
+            };
+        }
+    </script>
+</body>
+</html>

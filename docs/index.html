@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRAFT - Generative Resource for Academic and Fluency Techniques</title>
+    
+    <!-- SEO Optimization Meta Tags -->
+    <meta name="description" content="GRAFT es un generador local y gratuito de mazos de Anki con inteligencia artificial. Diseñado para estudiantes técnicos, científicos y profesionales no nativos de inglés que buscan dominar vocabulario especializado.">
+    <meta name="keywords" content="Anki, aprender ingles, ingles tecnico, vocabulario cientifico, IA local, Ollama, TTS neuronal, open source, gratis, pinkypetit, graft">
+    <meta name="author" content="pinkypetit">
+    
+    <!-- Open Graph for Social Networks -->
+    <meta property="og:title" content="GRAFT - Generador Local de Vocabulario en Inglés Técnico para Anki">
+    <meta property="og:description" content="Domina el vocabulario específico de tu carrera o industria. Totalmente local, de código abierto y gratuito.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pinkypetit.github.io/graft/">
+    
+    <!-- Schema.org JSON-LD Structured Data for SEO -->
+    <script type="application/ld-json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "GRAFT",
+      "alternateName": "Generative Resource for Academic and Fluency Techniques",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Cross-platform",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      },
+      "description": "Generador local de mazos de Anki personalizados para dominar el inglés técnico y profesional, diseñado para estudiantes y trabajadores no nativos.",
+      "softwareVersion": "1.0.0",
+      "downloadUrl": "https://pinkypetit.github.io/graft/Technical_English_Vinos.apkg",
+      "author": {
+        "@type": "Person",
+        "name": "pinkypetit"
+      }
+    }
+    </script>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">GRAFT</div>
+        <ul class="nav-links">
+            <li><a href="#manifesto" id="nav-manifesto-link">Manifiesto</a></li>
+            <li><a href="#features" id="nav-features-link">Características</a></li>
+            <li><a href="#pipeline" id="nav-pipeline-link">Cómo Funciona</a></li>
+            <li><a href="#download" id="nav-download-link">Descarga Demo</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-tag">Código Abierto &amp; 100% Local</div>
+        <h2>Construye tu Inglés Profesional<br><span>Mazo a Mazo</span></h2>
+        <p>
+            GRAFT (Generative Resource for Academic and Fluency Techniques) analiza colecciones de papers científicos y técnicos de tus temas de interés, extrae el vocabulario clave con TF-IDF y cura tarjetas interactivas de Anki con pronunciación IPA, significados precisos y audios neuronales en tu propia máquina.
+        </p>
+        <div class="cta-group">
+            <a href="https://github.com/pinkypetit/graft" class="btn btn-graft" id="btn-github-link">
+                <i class="fa-brands fa-github"></i> Ver Código en GitHub
+            </a>
+            <a href="#download" class="btn btn-outline" id="btn-view-demo-link">
+                <i class="fa-solid fa-download"></i> Descargar Mazo Demo
+            </a>
+        </div>
+    </header>
+
+    <!-- Manifesto Section -->
+    <section id="manifesto" class="card">
+        <div class="section-header" style="margin-bottom: 2rem;">
+            <h3>El Manifiesto GRAFT</h3>
+        </div>
+        <div style="font-size: 1.1rem; color: var(--text-secondary); max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+            <p>
+                Nuestra misión es <strong>democratizar y acelerar el dominio del inglés técnico y profesional para hablantes no nativos</strong>, eliminando las barreras lingüísticas que frenan tu potencial.
+            </p>
+            <p>
+                A diferencia de los cursos tradicionales que enseñan inglés cotidiano o genérico, GRAFT te permite construir <strong>puentes lingüísticos de alta precisión</strong> enfocados exactamente en lo que necesitas para tu día a día académico o profesional. Es la solución perfecta para:
+            </p>
+            <ul style="list-style-type: none; padding-left: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                <li>
+                    <strong style="color: var(--accent-cyan);"><i class="fa-solid fa-graduation-cap"></i> Estudiantes y Profesionales Técnicos/Científicos:</strong> 
+                    Que necesitan familiarizarse rápidamente con la jerga de papers de investigación, documentación y colaboraciones globales (energía, estadística, ciencia de datos, clima).
+                </li>
+                <li>
+                    <strong style="color: var(--accent-magenta);"><i class="fa-solid fa-briefcase"></i> Inmigrantes Recientes y Especialistas:</strong> 
+                    Que buscan insertarse en mercados laborales de nicho (vinos, hotelería, agricultura) y requieren dominar urgentemente el vocabulario de su entorno laboral real.
+                </li>
+                <li>
+                    <strong style="color: var(--accent-green);"><i class="fa-solid fa-brain"></i> Mentes Curiosas:</strong> 
+                    Autodidactas que desean explorar y dominar el vocabulario de cualquier campo del saber con rigor y consistencia.
+                </li>
+            </ul>
+            <p style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem; text-align: center; font-style: italic;">
+                Todo ejecutado completamente en local, gratuito y con absoluta privacidad.
+            </p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="section-header">
+            <h3>Características de Alta Gama</h3>
+            <p>Por qué GRAFT es la herramienta ideal para la adquisición de vocabulario de nicho.</p>
+        </div>
+        <div class="grid-3">
+            <div class="card">
+                <i class="fa-solid fa-shield-halved card-icon" style="color: var(--accent-magenta);"></i>
+                <h4>100% Local y Privado</h4>
+                <p>Usa la GPU de tu computadora (a través de Ollama y Qwen) para curar las tarjetas y el texto. Sin suscripciones, sin llaves de API externas y sin enviar tus documentos confidenciales a la nube.</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-chart-line card-icon"></i>
+                <h4>Filtrado TF-IDF Relevante</h4>
+                <p>No traduce todo a ciegas. Calcula la importancia estadística de cada palabra en un lote de documentos y aplica filtros para excluir siglas ruidosas (como GCM) y nombres propios.</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-volume-high card-icon" style="color: var(--accent-green);"></i>
+                <h4>Voz Neuronal Nativa</h4>
+                <p>Genera archivos de audio neuronal de última generación (Edge-TTS) para cada palabra, significado y oración de contexto. Se reproducen nativamente en tu celular o AnkiWeb.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pipeline Section -->
+    <section id="pipeline">
+        <div class="section-header">
+            <h3>El Flujo de Trabajo (Pipeline)</h3>
+            <p>Cómo GRAFT transforma documentos científicos crudos en mazos de Anki de máxima calidad académica.</p>
+        </div>
+        <div class="pipeline-container">
+            <svg class="svg-flowchart" viewBox="0 0 1000 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <!-- Step 1 -->
+               <g class="step" id="step1">
+                  <rect x="10" y="30" width="160" height="80" rx="10" fill="#131520" stroke="#FF80DD" stroke-width="2"/>
+                  <text x="90" y="70" fill="#FF80DD" font-family="'Outfit', sans-serif" font-size="13" font-weight="600" text-anchor="middle">1. Ingesta de Papers</text>
+                  <text x="90" y="90" fill="#a0a8c0" font-family="'Outfit', sans-serif" font-size="10" text-anchor="middle">PDFs de usuario o arXiv</text>
+               </g>
+               
+               <!-- Arrow 1 -->
+               <path d="M 180 70 L 210 70" stroke="#FF80DD" stroke-width="2" marker-end="url(#arrow)"/>
+               
+               <!-- Step 2 -->
+               <g class="step" id="step2">
+                  <rect x="220" y="30" width="160" height="80" rx="10" fill="#131520" stroke="#00E5FF" stroke-width="2"/>
+                  <text x="300" y="70" fill="#00E5FF" font-family="'Outfit', sans-serif" font-size="13" font-weight="600" text-anchor="middle">2. Pareto TF-IDF</text>
+                  <text x="300" y="90" fill="#a0a8c0" font-family="'Outfit', sans-serif" font-size="10" text-anchor="middle">Léxico y filtros de caso</text>
+               </g>
+               
+               <!-- Arrow 2 -->
+               <path d="M 390 70 L 420 70" stroke="#00E5FF" stroke-width="2" marker-end="url(#arrow)"/>
+               
+               <!-- Step 3 -->
+               <g class="step" id="step3">
+                  <rect x="430" y="30" width="160" height="80" rx="10" fill="#131520" stroke="#FF80DD" stroke-width="2"/>
+                  <text x="510" y="70" fill="#FF80DD" font-family="'Outfit', sans-serif" font-size="13" font-weight="600" text-anchor="middle">3. Curación por LLM</text>
+                  <text x="510" y="90" fill="#a0a8c0" font-family="'Outfit', sans-serif" font-size="10" text-anchor="middle">Qwen 14B limpia citas</text>
+               </g>
+               
+               <!-- Arrow 3 -->
+               <path d="M 600 70 L 630 70" stroke="#FF80DD" stroke-width="2" marker-end="url(#arrow)"/>
+               
+               <!-- Step 4 -->
+               <g class="step" id="step4">
+                  <rect x="640" y="30" width="160" height="80" rx="10" fill="#131520" stroke="#00E5FF" stroke-width="2"/>
+                  <text x="720" y="70" fill="#00E5FF" font-family="'Outfit', sans-serif" font-size="13" font-weight="600" text-anchor="middle">4. TTS Neuronal</text>
+                  <text x="720" y="90" fill="#a0a8c0" font-family="'Outfit', sans-serif" font-size="10" text-anchor="middle">3 audios .mp3 Edge-TTS</text>
+               </g>
+               
+               <!-- Arrow 4 -->
+               <path d="M 810 70 L 840 70" stroke="#00E5FF" stroke-width="2" marker-end="url(#arrow)"/>
+               
+               <!-- Step 5 -->
+               <g class="step" id="step5">
+                  <rect x="850" y="30" width="140" height="80" rx="10" fill="#131520" stroke="#00FF87" stroke-width="2"/>
+                  <text x="920" y="70" fill="#00FF87" font-family="'Outfit', sans-serif" font-size="13" font-weight="600" text-anchor="middle">5. Empaque APKG</text>
+                  <text x="920" y="90" fill="#a0a8c0" font-family="'Outfit', sans-serif" font-size="10" text-anchor="middle">GUIDs estables y tags</text>
+               </g>
+
+               <!-- Marker Definition for arrowheads -->
+               <defs>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                     <path d="M 0 1 L 10 5 L 0 9 z" fill="#00E5FF"/>
+                  </marker>
+               </defs>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download">
+        <div class="download-box">
+            <h3>Prueba la Demo: <span>Mazo de Vinos</span></h3>
+            <p>
+                Hemos curado y empaquetado un mazo de ejemplo con 30 términos esenciales de viticultura y enología extraídos directamente de artículos científicos. Cuenta con pronunciación IPA, definiciones contextuales y audios neuronales incorporados.
+            </p>
+            <a href="Technical_English_Vinos.apkg" class="btn btn-download-demo" id="btn-download-apkg-demo">
+                <i class="fa-solid fa-file-arrow-down"></i> Descargar Technical_English_Vinos.apkg
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 GRAFT Project. Creado por <a href="https://github.com/pinkypetit">pinkypetit</a>. Código abierto bajo licencia MIT.</p>
+    </footer>
+
+</body>
+</html>
